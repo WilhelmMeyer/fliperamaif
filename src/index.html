@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinball Hall of Fame</title>
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-image: radial-gradient(circle, #111 0%, #000 100%);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 3px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5),
+                0 0 40px rgba(255, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff0000;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px #ff0000,
+                0 0 20px #ff0000;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .ranking-table th {
+            background-color: #222;
+            color: #ffcc00;
+            padding: 15px;
+            text-align: left;
+            font-size: 1.2em;
+            border-bottom: 2px solid #ff0000;
+        }
+
+        .ranking-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            font-size: 1.1em;
+        }
+
+        .ranking-table tr:nth-child(1) {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+
+        .ranking-table tr:nth-child(1) td:first-child {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .ranking-table tr:nth-child(2) {
+            background-color: rgba(192, 192, 192, 0.1);
+        }
+
+        .ranking-table tr:nth-child(2) td:first-child {
+            color: #c0c0c0;
+            font-weight: bold;
+        }
+
+        .ranking-table tr:nth-child(3) {
+            background-color: rgba(205, 127, 50, 0.1);
+        }
+
+        .ranking-table tr:nth-child(3) td:first-child {
+            color: #cd7f32;
+            font-weight: bold;
+        }
+
+        .ranking-table tr:hover {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .score {
+            color: #39ff14;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .position {
+            font-weight: bold;
+            width: 50px;
+        }
+
+        .name {
+            width: auto;
+        }
+
+        .flashing {
+            animation: flash 1s infinite alternate;
+        }
+
+        @keyframes flash {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0.5;
+            }
+        }
+
+        .input-area {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        input[type="text"] {
+            background-color: #111;
+            border: 2px solid #ff0000;
+            color: white;
+            padding: 10px 15px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+        }
+
+        button {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #ff3333;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .arcade-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .flash-green {
+            animation: flashGreen 0.5s ease;
+        }
+
+        .flash-red {
+            animation: flashRed 0.5s ease;
+        }
+
+        @keyframes flashGreen {
+            0% {
+                background-color: #0f0;
+                color: black;
+            }
+
+            100% {
+                background-color: transparent;
+                color: inherit;
+            }
+        }
+
+        @keyframes flashRed {
+            0% {
+                background-color: #f00;
+                color: white;
+            }
+
+            100% {
+                background-color: transparent;
+                color: inherit;
+            }
+        }
+
+        button.reset {
+            background-color: #444;
+            border: 2px solid #ff0000;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        button.reset:hover {
+            background-color: #660000;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+
+    <script>
+        function atualizarHora() {
+            fetch('/hora_atual')
+                .then(response => response.text())
+                .then(hora => {
+                    document.getElementById('hora').textContent = hora;
+                });
+        }
+
+        setInterval(atualizarHora, 1000);
+        atualizarHora();
+
+        let ultimaPontuacao = 0;
+        let ultimaVida = 3;
+        let ultimaBola = false;
+        let scoreJaSalvo = false;
+
+        function animar(id, classe) {
+            const el = document.getElementById(id);
+            el.classList.add(classe);
+            setTimeout(() => el.classList.remove(classe), 300);
+        }
+
+        function atualizarPontuacao() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const novaPontuacao = data.pontuacao || 0;
+                    const novasVidas = data.vidas;
+                    const bolaEmJogo = data.bola_em_jogo;
+                    const jogoAtivo = data.jogo_ativo;
+
+                    const pontuacaoElem = document.getElementById('pontuacao');
+                    const vidasElem = document.getElementById('vidas');
+
+                    pontuacaoElem.textContent = novaPontuacao.toLocaleString();
+                    vidasElem.textContent = `Vidas restantes: ${novasVidas}`;
+
+                    if (novaPontuacao > ultimaPontuacao) animar("pontuacao", "flash-green");
+                    if (novasVidas < ultimaVida) animar("vidas", "flash-red");
+                    if (!ultimaBola && bolaEmJogo) animar("pontuacao", "flash-green");
+
+                    // Fim de jogo: exibir formulário
+                    if (!jogoAtivo && !scoreJaSalvo) {
+                        document.getElementById('nomeForm').style.display = "block";
+                    }
+
+                    ultimaPontuacao = novaPontuacao;
+                    ultimaVida = novasVidas;
+                    ultimaBola = bolaEmJogo;
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar status:", error);
+                });
+        }
+
+        function salvarPontuacao() {
+            const nome = document.getElementById('playerName').value.trim();
+            if (nome.length === 0) {
+                alert("Digite seu nome antes de salvar.");
+                return;
+            }
+
+            fetch('/salvar_score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome: nome })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    scoreJaSalvo = true;
+                    document.getElementById('confirmacao').textContent = `Pontuação salva para ${data.nome}!`;
+
+                    // Oculta formulário e limpa campo
+                    document.getElementById('nomeForm').style.display = "none";
+                    document.getElementById('playerName').value = "";
+
+                    // Oculta mensagem após 5 segundos
+                    setTimeout(() => {
+                        document.getElementById('confirmacao').textContent = "";
+                    }, 5000);
+                });
+        }
+        setInterval(atualizarPontuacao, 100);
+        atualizarPontuacao();
+
+        function atualizarRanking() {
+            fetch('/hall')
+                .then(response => response.json())
+                .then(dados => {
+                    const corpo = document.getElementById("rankingBody");
+                    corpo.innerHTML = ""; // limpa a tabela
+
+                    dados.forEach((linha, index) => {
+                        const tr = document.createElement("tr");
+
+                        const pos = document.createElement("td");
+                        pos.className = "position";
+                        pos.textContent = index + 1;
+
+                        const nome = document.createElement("td");
+                        nome.className = "name";
+                        nome.textContent = linha[0];  // nome
+
+                        const pontos = document.createElement("td");
+                        pontos.className = "score";
+                        pontos.textContent = linha[1].toLocaleString();  // pontos
+
+                        tr.appendChild(pos);
+                        tr.appendChild(nome);
+                        tr.appendChild(pontos);
+                        corpo.appendChild(tr);
+                    });
+                });
+        }
+        setInterval(atualizarRanking, 3000);
+        atualizarRanking();
+
+        function resetarJogo() {
+            fetch('/reset', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) throw new Error("Erro ao resetar jogo.");
+                    return response.text();
+                })
+                .then(msg => {
+                    console.log(msg);
+                    scoreJaSalvo = false;
+                    document.getElementById('playerName').value = "";
+                    document.getElementById('nomeForm').style.display = "none";
+                    document.getElementById('confirmacao').textContent = "";
+                    atualizarPontuacao(); // atualiza imediatamente
+                })
+                .catch(error => {
+                    alert("Erro ao resetar jogo: " + error);
+                });
+        }
+    </script>
+
+
+
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="arcade-font">PINBALL HALL OF FAME <span id="hora"></span></h1>
+
+        <h2 class="arcade-font" style="text-align: center;">PONTUAÇÃO ATUAL</h2>
+        <p id="pontuacao" style="font-size: 2em; color: #39ff14; text-align: center;">0</p>
+
+
+        <p id="vidas" style="font-size: 1.5em; color: #ffcc00; text-align: center;">
+            Vidas restantes: 3
+        </p>
+
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>JOGADOR</th>
+                    <th class="score">PONTOS</th>
+                </tr>
+            </thead>
+            <tbody id="rankingBody">
+                <!-- Ranking será preenchido via JavaScript -->
+            </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="resetarJogo()">REINICIAR JOGO</button>
+        </div>
+
+        <div class="input-area" id="nomeForm" style="display: none;">
+            <p class="flashing">FIM DE JOGO — DIGITE SEU NOME</p>
+            <input type="text" id="playerName" maxlength="10" placeholder="Seu nome">
+            <button onclick="salvarPontuacao()">SALVAR</button>
+        </div>
+
+        <p id="confirmacao" style="text-align: center; color: #39ff14;"></p>
+    </div>
+
+</body>
+
+</html>
