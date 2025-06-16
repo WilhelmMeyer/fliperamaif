@@ -1,0 +1,14 @@
+[Unit]
+Description=Servidor Pinball Flask
+After=network.target
+
+[Service]
+ExecStart=/home/pi/seu_projeto_pinball/start_pinball.sh
+WorkingDirectory=/home/pi/seu_projeto_pinball
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
