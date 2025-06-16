@@ -5,7 +5,7 @@ import game_state
 import score_db
 
 SERIAL_PORT = '/dev/ttyUSB0'
-BAUD_RATE = 9600
+BAUD_RATE = 115200
 
 arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
 time.sleep(2)
