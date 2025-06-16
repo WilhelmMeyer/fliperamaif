@@ -203,17 +203,6 @@
 
 
     <script>
-        function atualizarHora() {
-            fetch('/hora_atual')
-                .then(response => response.text())
-                .then(hora => {
-                    document.getElementById('hora').textContent = hora;
-                });
-        }
-
-        setInterval(atualizarHora, 1000);
-        atualizarHora();
-
         let ultimaPontuacao = 0;
         let ultimaVida = 3;
         let ultimaBola = false;
@@ -346,7 +335,7 @@
 
 <body>
     <div class="container">
-        <h1 class="arcade-font">PINBALL HALL OF FAME <span id="hora"></span></h1>
+        <h1 class="arcade-font">PINBALL IFPR</h1>
 
         <h2 class="arcade-font" style="text-align: center;">PONTUAÇÃO ATUAL</h2>
         <p id="pontuacao" style="font-size: 2em; color: #39ff14; text-align: center;">0</p>
@@ -355,6 +344,8 @@
         <p id="vidas" style="font-size: 1.5em; color: #ffcc00; text-align: center;">
             Vidas restantes: 3
         </p>
+
+        <h2 class="arcade-font" style="text-align: center;">HALL OF FAME</h2>
 
         <table class="ranking-table">
             <thead>

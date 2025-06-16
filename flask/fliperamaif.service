@@ -3,8 +3,8 @@ Description=Servidor Pinball Flask
 After=network.target
 
 [Service]
-ExecStart=/home/pi/seu_projeto_pinball/start_pinball.sh
-WorkingDirectory=/home/pi/seu_projeto_pinball
+ExecStart=/home/mfb23/fliperamaif/flask/start_fliperamaif.sh
+WorkingDirectory=/home/mfb23/fliperamaif/flask
 StandardOutput=inherit
 StandardError=inherit
 Restart=always

@@ -15,10 +15,6 @@ def index():
     agora = datetime.now().strftime("%H:%M:%S")
     return render_template('index.html', hora=agora)
 
-@app.route('/hora_atual')
-def hora_atual():
-    return datetime.now().strftime("%H:%M:%S")
-
 @app.route('/status')
 def status():
     return jsonify({

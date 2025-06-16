@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/pi/seu_projeto_pinball  # ajuste para o caminho real
+cd /home/mfb23/fliperamaif/flask
 python3 app.py
