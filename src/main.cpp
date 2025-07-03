@@ -17,7 +17,7 @@ struct Joystick {
 // ---------------------- Definições ----------------------
 const int NUM_JOYSTICKS = 6;
 const int COOLDOWN_MS = 500;
-const int joystickThreshold = 40;
+const int joystickThreshold = 80;
 const float alphaPadrao = 0.1;
 float alphaAtual = alphaPadrao;
 bool acelerandoCentro = false;
