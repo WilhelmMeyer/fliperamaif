@@ -7,8 +7,6 @@ import score_db
 import logging
 
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
@@ -46,6 +44,10 @@ def salvar_score():
 def hall():
     top_scores = score_db.obter_top_scores()
     return jsonify(top_scores)
+
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
