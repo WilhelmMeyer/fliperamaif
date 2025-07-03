@@ -40,7 +40,6 @@ def processar_linha(linha):
                 game_state.jogo_ativo = False
                 print("[FIM DE JOGO]")
 
-
 def escutar_arduino():
     print("Escutando Arduino...")
     while True:
@@ -52,5 +51,3 @@ def escutar_arduino():
 def iniciar_listener():
     t = threading.Thread(target=escutar_arduino, daemon=True)
     t.start()
-
-

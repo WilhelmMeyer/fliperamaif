@@ -4,6 +4,11 @@ from flask import Flask, render_template, request, jsonify
 import arduino_listener
 import game_state
 import score_db
+import logging
+
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
