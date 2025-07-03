@@ -27,11 +27,14 @@ def processar_linha(linha):
             print(f"[IGNORADO] SCORE recebido sem bola em jogo: {linha}")
 
     elif linha == "NEW_BALL":
+        
+        print("[NOVA BOLA]")
         if game_state.jogo_ativo:
             game_state.bola_em_jogo = True
             print("[NOVA BOLA] Bola em jogo!")
 
     elif linha == "BALL_OUT":
+        print("[NOVA PERDIDA]")
         if game_state.bola_em_jogo:
             game_state.vidas_restantes -= 1
             game_state.bola_em_jogo = False
