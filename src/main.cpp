@@ -17,14 +17,14 @@ struct Joystick {
 // ---------------------- Definições ----------------------
 const int NUM_JOYSTICKS = 6;
 const int COOLDOWN_MS = 500;
-const int joystickThreshold = 150;
+const int joystickThreshold = 40;
 const float alphaPadrao = 0.1;
 float alphaAtual = alphaPadrao;
 bool acelerandoCentro = false;
 
-#define STEP_FLIP 66
+#define STEP_FLIP 60
 #define STEP_INIT 50
-#define STEP_DELAY_US 550
+#define STEP_DELAY_US 600
 
 // ---------------------- Lista de joysticks ----------------------
 Joystick joysticks[NUM_JOYSTICKS] = {
@@ -32,8 +32,8 @@ Joystick joysticks[NUM_JOYSTICKS] = {
   {32, 33, 2048.0, 2048.0, 100, 0},
   {36, 39, 2048.0, 2048.0, 200, 0},
   {25, 26, 2048.0, 2048.0, 200, 0},
-  {27, 4, 2048.0, 2048.0, 300, 0},
-  {13, 2, 2048.0, 2048.0, 300, 0}
+  {27, 13, 2048.0, 2048.0, 300, 0},
+  {4, 2, 2048.0, 2048.0, 300, 0}
 };
 
 // ---------------------- Motores de Passo ----------------------
@@ -45,6 +45,8 @@ volatile int pos1 = 0;
 volatile int pos2 = 0;
 volatile int alvo1 = 0;
 volatile int alvo2 = 0;
+volatile bool flip1_acionado = false;
+volatile bool flip2_acionado = false;
 
 // ---------------------- Botões e Sensores Digitais ----------------------
 const int botaoMotor1 = 22;
@@ -90,14 +92,6 @@ void iniciarPWMAvoidEnable() {
   ledcSetup(0, 500, 8);
   ledcAttachPin(pinAvoidEnable, 0);
   ledcWrite(0, 253);
-}
-
-// ---------------------- Função passo-a-passo ----------------------
-void executarPasso(int stepPin) {
-  digitalWrite(stepPin, HIGH);
-  delayMicroseconds(STEP_DELAY_US);
-  digitalWrite(stepPin, LOW);
-  delayMicroseconds(STEP_DELAY_US);
 }
 
 // ---------------------- Tasks ----------------------
@@ -156,7 +150,10 @@ void TaskJoystickScore(void *pvParameters) {
       int diffY = valY - joy.centerY;
       if ((abs(diffX) > joystickThreshold || abs(diffY) > joystickThreshold) &&
           (millis() - joy.lastScoreTime > COOLDOWN_MS)) {
-        Serial.print("SCORE:"); Serial.println(joy.score);
+        Serial.print("SCORE:");
+        Serial.print(i);
+        Serial.print(":");
+        Serial.println(joy.score);
         joy.lastScoreTime = millis();
       }
       vTaskDelay(pdMS_TO_TICKS(2));
@@ -183,45 +180,65 @@ void TaskEventosDigitais(void *pvParameters) {
   }
 }
 
+// ---------------------- Função passo-a-passo ----------------------
+void executarPasso(int stepPin) {
+  digitalWrite(stepPin, HIGH);
+  delayMicroseconds(STEP_DELAY_US);
+  digitalWrite(stepPin, LOW);
+  delayMicroseconds(STEP_DELAY_US);
+}
+
 void TaskFliperControl(void *pvParameters) {
   while (true) {
-    bool b1 = digitalRead(botaoMotor1) == LOW;
-    bool b2 = digitalRead(botaoMotor2) == LOW;
-    alvo1 = b1 ? STEP_FLIP : 0;
-    alvo2 = b2 ? 0 : STEP_FLIP;
+    flip1_acionado = digitalRead(botaoMotor1) == LOW;
+    flip2_acionado = digitalRead(botaoMotor2) == LOW;
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 
 void TaskFliperStepper(void *pvParameters) {
   while (true) {
-    if (pos1 != alvo1) {
-      bool dir = alvo1 > pos1;
-      digitalWrite(dirPin1, dir ? HIGH : LOW);
+    bool movimento = false;
+
+    if (flip1_acionado && pos1 < STEP_FLIP) {
+      digitalWrite(dirPin1, HIGH);
       executarPasso(stepPin1);
-      pos1 += dir ? 1 : -1;
+      pos1++;
+      movimento = true;
+    } else if (!flip1_acionado && pos1 > 0) {
+      digitalWrite(dirPin1, LOW);
+      executarPasso(stepPin1);
+      pos1--;
+      movimento = true;
     }
-    if (pos2 != alvo2) {
-      bool dir = alvo2 > pos2;
-      digitalWrite(dirPin2, dir ? HIGH : LOW);
+
+    if (flip2_acionado && pos2 < STEP_FLIP) {
+      digitalWrite(dirPin2, LOW);
       executarPasso(stepPin2);
-      pos2 += dir ? 1 : -1;
+      pos2++;
+      movimento = true;
+    } else if (!flip2_acionado && pos2 > 0) {
+      digitalWrite(dirPin2, HIGH);
+      executarPasso(stepPin2);
+      pos2--;
+      movimento = true;
     }
-    vTaskDelay(pdMS_TO_TICKS(1));
+
+    if (!movimento) {
+      vTaskDelay(pdMS_TO_TICKS(1));  // libera o core se nada estiver acontecendo
+    }
   }
 }
 
 void TaskInicializarFliper(void *pvParameters) {
   for (int i = 0; i < STEP_INIT; i++) {
-    digitalWrite(dirPin1, LOW);
-    digitalWrite(dirPin2, HIGH);
+    digitalWrite(dirPin1, HIGH);
+    digitalWrite(dirPin2, LOW);
     executarPasso(stepPin1);
     executarPasso(stepPin2);
   }
-  pos1 = 0;
-  pos2 = 0;
-  alvo1 = 0;
-  alvo2 = 0;
+  pos1 = STEP_FLIP;
+  pos2 = - STEP_FLIP;
   vTaskDelete(NULL);
 }
 
@@ -242,17 +259,17 @@ void setup() {
   pinMode(dirPin2, OUTPUT);
   pinMode(botaoMotor1, INPUT_PULLUP);
   pinMode(botaoMotor2, INPUT_PULLUP);
-  pinMode(pinNewBall, INPUT);
-  pinMode(pinBallOut, INPUT);
+  pinMode(pinNewBall, INPUT_PULLDOWN); 
+  pinMode(pinBallOut, INPUT_PULLDOWN);
   iniciarPWMAvoidEnable();
 
   xTaskCreatePinnedToCore(TaskJoystickScore, "JoystickScore", 4096, NULL, 1, NULL, 0);
   xTaskCreatePinnedToCore(TaskSalvarNVS, "SalvarNVS", 2048, NULL, 0, NULL, 0);
   xTaskCreatePinnedToCore(TaskSerialCom, "SerialCom", 2048, NULL, 1, NULL, 0);
   xTaskCreatePinnedToCore(TaskEventosDigitais, "Eventos", 1024, NULL, 1, NULL, 0);
-  xTaskCreatePinnedToCore(TaskFliperControl, "FliperControl", 2048, NULL, 2, NULL, 0);
-  xTaskCreatePinnedToCore(TaskFliperStepper, "FliperStepper", 2048, NULL, 2, NULL, 0);
-  xTaskCreatePinnedToCore(TaskInicializarFliper, "InitFlipers", 2048, NULL, 1, NULL, 0);
+  xTaskCreatePinnedToCore(TaskFliperControl, "FliperControl", 2048, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(TaskFliperStepper, "FliperStepper", 2048, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(TaskInicializarFliper, "InitFlipers", 2048, NULL, 1, NULL, 1);
 }
 
 void loop() {

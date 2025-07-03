@@ -13,12 +13,14 @@ time.sleep(2)
 def processar_linha(linha):
     linha = linha.strip()
     
-    if linha.startswith("SCORE:"):
+    if linha.startswith("SCORE"):
         if game_state.bola_em_jogo and game_state.jogo_ativo:
             try:
-                valor = int(linha.split(":")[1])
+                msg=linha.split(":")
+                ovelha=msg[1]
+                valor = int(msg[2])
                 game_state.pontuacao_atual += valor
-                print(f"[+{valor} pts] Total: {game_state.pontuacao_atual}")
+                print(f"[Ovelha {ovelha} +{valor} pts] Total: {game_state.pontuacao_atual}")
             except:
                 print("Erro ao interpretar SCORE")
         else:

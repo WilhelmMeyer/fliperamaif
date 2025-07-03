@@ -1,5 +1,5 @@
-int dirPin = 4;
-int stepPin = 5;
+int dirPin = 16;
+int stepPin = 14;
 int botao = 10;
 int aux = 1;
 #define step_rev 50     // Número de passos por movimento
