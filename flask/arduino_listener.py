@@ -34,7 +34,7 @@ def processar_linha(linha):
             print("[NOVA BOLA] Bola em jogo!")
 
     elif linha == "BALL_OUT":
-        print("[NOVA PERDIDA]")
+        print("[BOLA PERDIDA]")
         if game_state.bola_em_jogo:
             game_state.vidas_restantes -= 1
             game_state.bola_em_jogo = False

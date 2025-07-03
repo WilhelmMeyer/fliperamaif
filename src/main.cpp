@@ -167,10 +167,12 @@ void TaskEventosDigitais(void *pvParameters) {
     bool stateOut = digitalRead(pinBallOut);
     unsigned long now = millis();
     if (stateNew == LOW && lastStateNewBall == HIGH && (now - lastNewBallTime > EVENT_DEBOUNCE_MS)) {
+    // if (stateNew == LOW) {
       Serial.println("NEW_BALL");
       lastNewBallTime = now;
     }
     if (stateOut == LOW && lastStateBallOut == HIGH && (now - lastBallOutTime > EVENT_DEBOUNCE_MS)) {
+    // if (stateOut == LOW) {
       Serial.println("BALL_OUT");
       lastBallOutTime = now;
     }
@@ -259,8 +261,8 @@ void setup() {
   pinMode(dirPin2, OUTPUT);
   pinMode(botaoMotor1, INPUT_PULLUP);
   pinMode(botaoMotor2, INPUT_PULLUP);
-  pinMode(pinNewBall, INPUT_PULLDOWN); 
-  pinMode(pinBallOut, INPUT_PULLDOWN);
+  pinMode(pinNewBall, INPUT_PULLUP); 
+  pinMode(pinBallOut, INPUT_PULLUP);
   iniciarPWMAvoidEnable();
 
   xTaskCreatePinnedToCore(TaskJoystickScore, "JoystickScore", 4096, NULL, 1, NULL, 0);
