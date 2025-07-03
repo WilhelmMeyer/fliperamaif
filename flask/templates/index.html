@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinball Hall of Fame</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         body {
             background-color: #000;
@@ -203,6 +205,10 @@
 
 
     <script>
+    /*
+    qunado ocorre nova bola ou bola perdida precisa fazer atualização do front end
+    
+    */
         let ultimaPontuacao = 0;
         let ultimaVida = 3;
         let ultimaBola = false;
@@ -215,6 +221,7 @@
         }
 
         function atualizarPontuacao() {
+            //chamada continuamente
             fetch('/status')
                 .then(response => response.json())
                 .then(data => {
@@ -222,6 +229,29 @@
                     const novasVidas = data.vidas;
                     const bolaEmJogo = data.bola_em_jogo;
                     const jogoAtivo = data.jogo_ativo;
+                    //se a bola estiver em jogo, de um sinal visual pro usuario
+                    const statusElem = document.getElementById("status-indicador");
+
+                    if (!jogoAtivo) {
+                        statusElem.innerHTML = '<i class="fas fa-skull-crossbones"></i> JOGO ENCERRADO';
+                        statusElem.style.backgroundColor = '#400';
+                        statusElem.style.color = '#fff';
+                        statusElem.style.textShadow = '0 0 10px red';
+                    } else if (bolaEmJogo) {
+                        statusElem.innerHTML = '<i class="fas fa-play-circle"></i> BOLA EM JOGO';
+                        statusElem.style.backgroundColor = '#004400';
+                        statusElem.style.color = '#39ff14';
+                        statusElem.style.textShadow = '0 0 10px lime';
+                    } else {
+                        statusElem.innerHTML = '<i class="fas fa-pause-circle"></i> AGUARDANDO LANÇAMENTO';
+                        statusElem.style.backgroundColor = '#333';
+                        statusElem.style.color = '#ffcc00';
+                        statusElem.style.textShadow = '0 0 8px gold';
+                    }
+                    
+                    //fim edições ronald
+                    console.log(jogoAtivo);
+                    console.log("=======================");
 
                     const pontuacaoElem = document.getElementById('pontuacao');
                     const vidasElem = document.getElementById('vidas');
@@ -334,6 +364,21 @@
 </head>
 
 <body>
+<div id="status-indicador" style="
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #111;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    font-size: 1.2em;
+    border-bottom: 3px solid red;
+    font-family: 'Press Start 2P', cursive;
+    text-shadow: 0 0 8px red;
+">
+    <i class="fas fa-circle-notch fa-spin"></i> Carregando estado do jogo...
+</div>
     <div class="container">
         <h1 class="arcade-font">PINBALL IFPR</h1>
 
