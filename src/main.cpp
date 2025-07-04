@@ -166,12 +166,12 @@ void TaskEventosDigitais(void *pvParameters) {
     bool stateNew = digitalRead(pinNewBall);
     bool stateOut = digitalRead(pinBallOut);
     unsigned long now = millis();
-    if (stateNew == LOW && lastStateNewBall == HIGH && (now - lastNewBallTime > EVENT_DEBOUNCE_MS)) {
+    if (stateNew == LOW && lastStateNewBall == HIGH) {
     // if (stateNew == LOW) {
       Serial.println("NEW_BALL");
       lastNewBallTime = now;
     }
-    if (stateOut == LOW && lastStateBallOut == HIGH && (now - lastBallOutTime > EVENT_DEBOUNCE_MS)) {
+    if (stateOut == LOW && lastStateBallOut == HIGH) {
     // if (stateOut == LOW) {
       Serial.println("BALL_OUT");
       lastBallOutTime = now;

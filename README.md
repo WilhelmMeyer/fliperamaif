@@ -29,4 +29,7 @@ Projeto desenvolvido por alunos do curso de Engenharia de Controle e Automação
 - Ronald Jose Contijo  
 - Winderson Nascimento da Cruz  
 
+**Colaboração adicional:**  
+- Luiz Eduardo Virgínio de Souza
+
 Ano: 2025
