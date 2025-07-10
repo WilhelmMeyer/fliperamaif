@@ -5,7 +5,8 @@
 #include <nvs_flash.h>
 
 // ---------------------- Estrutura para representar um joystick ----------------------
-struct Joystick {
+struct Joystick
+{
   int pinX;
   int pinY;
   float centerX;
@@ -26,15 +27,16 @@ bool acelerandoCentro = false;
 #define STEP_INIT 50
 #define STEP_DELAY_US 600
 
+QueueHandle_t filaNewBall;
+
 // ---------------------- Lista de joysticks ----------------------
 Joystick joysticks[NUM_JOYSTICKS] = {
-  {34, 35, 2048.0, 2048.0, 100, 0},
-  {32, 33, 2048.0, 2048.0, 100, 0},
-  {36, 39, 2048.0, 2048.0, 200, 0},
-  {25, 26, 2048.0, 2048.0, 200, 0},
-  {27, 13, 2048.0, 2048.0, 300, 0},
-  {4, 2, 2048.0, 2048.0, 300, 0}
-};
+    {34, 35, 2048.0, 2048.0, 100, 0},
+    {32, 33, 2048.0, 2048.0, 100, 0},
+    {36, 39, 2048.0, 2048.0, 200, 0},
+    {25, 26, 2048.0, 2048.0, 200, 0},
+    {27, 13, 2048.0, 2048.0, 300, 0},
+    {4, 2, 2048.0, 2048.0, 300, 0}};
 
 // ---------------------- Motores de Passo ----------------------
 const int stepPin1 = 14;
@@ -61,9 +63,11 @@ unsigned long lastBallOutTime = 0;
 const unsigned long EVENT_DEBOUNCE_MS = 300;
 
 // ---------------------- NVS ----------------------
-void salvarCentroNVS(int idx, float centroX, float centroY) {
+void salvarCentroNVS(int idx, float centroX, float centroY)
+{
   nvs_handle_t handle;
-  if (nvs_open("centros", NVS_READWRITE, &handle) == ESP_OK) {
+  if (nvs_open("centros", NVS_READWRITE, &handle) == ESP_OK)
+  {
     String chaveX = "x" + String(idx);
     String chaveY = "y" + String(idx);
     nvs_set_blob(handle, chaveX.c_str(), &centroX, sizeof(float));
@@ -73,10 +77,12 @@ void salvarCentroNVS(int idx, float centroX, float centroY) {
   }
 }
 
-bool carregarCentroNVS(int idx, float* centroX, float* centroY) {
+bool carregarCentroNVS(int idx, float *centroX, float *centroY)
+{
   nvs_handle_t handle;
   size_t size = sizeof(float);
-  if (nvs_open("centros", NVS_READONLY, &handle) == ESP_OK) {
+  if (nvs_open("centros", NVS_READONLY, &handle) == ESP_OK)
+  {
     String chaveX = "x" + String(idx);
     String chaveY = "y" + String(idx);
     esp_err_t errX = nvs_get_blob(handle, chaveX.c_str(), centroX, &size);
@@ -88,49 +94,72 @@ bool carregarCentroNVS(int idx, float* centroX, float* centroY) {
 }
 
 // ---------------------- PWM Avoid Enable ----------------------
-void iniciarPWMAvoidEnable() {
-  ledcSetup(0, 500, 8);
-  ledcAttachPin(pinAvoidEnable, 0);
-  ledcWrite(0, 253);
+void iniciarPWMAvoidEnable()
+{
+  // ledcSetup(0, 500, 8);
+  // ledcAttachPin(pinAvoidEnable, 0);
+  // ledcWrite(0, 253);
+}
+
+//---------------------- Interruption New Ball ----------------------
+void IRAM_ATTR isrNewBall()
+{
+  uint8_t evento = 1;
+  Serial.println("NEW_BALL");
+  // xQueueSendFromISR(filaNewBall, &evento, NULL);
 }
 
 // ---------------------- Tasks ----------------------
-void TaskSalvarNVS(void *pvParameters) {
-  while (true) {
-    for (int i = 0; i < NUM_JOYSTICKS; i++) {
+void TaskSalvarNVS(void *pvParameters)
+{
+  while (true)
+  {
+    for (int i = 0; i < NUM_JOYSTICKS; i++)
+    {
       salvarCentroNVS(i, joysticks[i].centerX, joysticks[i].centerY);
     }
     vTaskDelay(pdMS_TO_TICKS(5000));
   }
 }
 
-void TaskSerialCom(void *pvParameters) {
+void TaskSerialCom(void *pvParameters)
+{
   String comando = "";
-  while (true) {
-    while (Serial.available()) {
+  while (true)
+  {
+    while (Serial.available())
+    {
       char c = Serial.read();
-      if (c == '\n') {
+      if (c == '\n')
+      {
         comando.trim();
-        if (comando == "JOYSTICK_RESET") {
-          for (int i = 0; i < NUM_JOYSTICKS; i++) {
+        if (comando == "JOYSTICK_RESET")
+        {
+          for (int i = 0; i < NUM_JOYSTICKS; i++)
+          {
             joysticks[i].centerX = 2048.0;
             joysticks[i].centerY = 2048.0;
             salvarCentroNVS(i, joysticks[i].centerX, joysticks[i].centerY);
           }
-        } else if (comando == "JOYSTICK_FIND") {
-          if (!acelerandoCentro) {
+        }
+        else if (comando == "JOYSTICK_FIND")
+        {
+          if (!acelerandoCentro)
+          {
             acelerandoCentro = true;
             alphaAtual = 0.3;
-            xTaskCreatePinnedToCore([](void *) {
+            xTaskCreatePinnedToCore([](void *)
+                                    {
               vTaskDelay(pdMS_TO_TICKS(5000));
               alphaAtual = alphaPadrao;
               acelerandoCentro = false;
-              vTaskDelete(NULL);
-            }, "AlphaTemp", 1024, NULL, 1, NULL, 1);
+              vTaskDelete(NULL); }, "AlphaTemp", 1024, NULL, 1, NULL, 1);
           }
         }
         comando = "";
-      } else {
+      }
+      else
+      {
         comando += c;
       }
     }
@@ -138,9 +167,12 @@ void TaskSerialCom(void *pvParameters) {
   }
 }
 
-void TaskJoystickScore(void *pvParameters) {
-  while (true) {
-    for (int i = 0; i < NUM_JOYSTICKS; i++) {
+void TaskJoystickScore(void *pvParameters)
+{
+  while (true)
+  {
+    for (int i = 0; i < NUM_JOYSTICKS; i++)
+    {
       Joystick &joy = joysticks[i];
       int valX = analogRead(joy.pinX);
       int valY = analogRead(joy.pinY);
@@ -149,7 +181,8 @@ void TaskJoystickScore(void *pvParameters) {
       int diffX = valX - joy.centerX;
       int diffY = valY - joy.centerY;
       if ((abs(diffX) > joystickThreshold || abs(diffY) > joystickThreshold) &&
-          (millis() - joy.lastScoreTime > COOLDOWN_MS)) {
+          (millis() - joy.lastScoreTime > COOLDOWN_MS))
+      {
         Serial.print("SCORE:");
         Serial.print(i);
         Serial.print(":");
@@ -161,96 +194,129 @@ void TaskJoystickScore(void *pvParameters) {
   }
 }
 
-void TaskEventosDigitais(void *pvParameters) {
-  while (true) {
-    bool stateNew = digitalRead(pinNewBall);
+void TaskEventosDigitais(void *pvParameters)
+{
+  while (true)
+  {
+    // bool stateNew = digitalRead(pinNewBall);
     bool stateOut = digitalRead(pinBallOut);
     unsigned long now = millis();
-    if (stateNew == LOW && lastStateNewBall == HIGH) {
-    // if (stateNew == LOW) {
-      Serial.println("NEW_BALL");
-      lastNewBallTime = now;
-    }
-    if (stateOut == LOW && lastStateBallOut == HIGH) {
-    // if (stateOut == LOW) {
+    // if (stateNew == LOW && lastStateNewBall == HIGH)
+    // {
+    //   // if (stateNew == LOW) {
+    //   Serial.println("NEW_BALL");
+    //   lastNewBallTime = now;
+    // }
+    if (stateOut == LOW && lastStateBallOut == HIGH)
+    {
+      // if (stateOut == LOW) {
       Serial.println("BALL_OUT");
       lastBallOutTime = now;
     }
-    lastStateNewBall = stateNew;
+    // lastStateNewBall = stateNew;
     lastStateBallOut = stateOut;
     vTaskDelay(pdMS_TO_TICKS(30));
   }
 }
 
+void TaskNewBall(void *pvParameters)
+{
+  uint8_t evento;
+  for (;;)
+  {
+    if (xQueueReceive(filaNewBall, &evento, portMAX_DELAY))
+    {
+      Serial.println("NEW_BALL");
+    }
+  }
+}
+
 // ---------------------- Função passo-a-passo ----------------------
-void executarPasso(int stepPin) {
+void executarPasso(int stepPin)
+{
   digitalWrite(stepPin, HIGH);
   delayMicroseconds(STEP_DELAY_US);
   digitalWrite(stepPin, LOW);
   delayMicroseconds(STEP_DELAY_US);
 }
 
-void TaskFliperControl(void *pvParameters) {
-  while (true) {
+void TaskFliperControl(void *pvParameters)
+{
+  while (true)
+  {
     flip1_acionado = digitalRead(botaoMotor1) == LOW;
     flip2_acionado = digitalRead(botaoMotor2) == LOW;
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 
-void TaskFliperStepper(void *pvParameters) {
-  while (true) {
+void TaskFliperStepper(void *pvParameters)
+{
+  while (true)
+  {
     bool movimento = false;
 
-    if (flip1_acionado && pos1 < STEP_FLIP) {
+    if (flip1_acionado && pos1 < STEP_FLIP)
+    {
       digitalWrite(dirPin1, HIGH);
       executarPasso(stepPin1);
       pos1++;
       movimento = true;
-    } else if (!flip1_acionado && pos1 > 0) {
+    }
+    else if (!flip1_acionado && pos1 > 0)
+    {
       digitalWrite(dirPin1, LOW);
       executarPasso(stepPin1);
       pos1--;
       movimento = true;
     }
 
-    if (flip2_acionado && pos2 < STEP_FLIP) {
+    if (flip2_acionado && pos2 < STEP_FLIP)
+    {
       digitalWrite(dirPin2, LOW);
       executarPasso(stepPin2);
       pos2++;
       movimento = true;
-    } else if (!flip2_acionado && pos2 > 0) {
+    }
+    else if (!flip2_acionado && pos2 > 0)
+    {
       digitalWrite(dirPin2, HIGH);
       executarPasso(stepPin2);
       pos2--;
       movimento = true;
     }
 
-    if (!movimento) {
-      vTaskDelay(pdMS_TO_TICKS(1));  // libera o core se nada estiver acontecendo
+    if (!movimento)
+    {
+      vTaskDelay(pdMS_TO_TICKS(1)); // libera o core se nada estiver acontecendo
     }
   }
 }
 
-void TaskInicializarFliper(void *pvParameters) {
-  for (int i = 0; i < STEP_INIT; i++) {
+void TaskInicializarFliper(void *pvParameters)
+{
+  for (int i = 0; i < STEP_INIT; i++)
+  {
     digitalWrite(dirPin1, HIGH);
     digitalWrite(dirPin2, LOW);
     executarPasso(stepPin1);
     executarPasso(stepPin2);
   }
   pos1 = STEP_FLIP;
-  pos2 = - STEP_FLIP;
+  pos2 = -STEP_FLIP;
   vTaskDelete(NULL);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   analogReadResolution(12);
   nvs_flash_init();
-  for (int i = 0; i < NUM_JOYSTICKS; i++) {
+  for (int i = 0; i < NUM_JOYSTICKS; i++)
+  {
     float cx, cy;
-    if (carregarCentroNVS(i, &cx, &cy)) {
+    if (carregarCentroNVS(i, &cx, &cy))
+    {
       joysticks[i].centerX = cx;
       joysticks[i].centerY = cy;
     }
@@ -261,8 +327,20 @@ void setup() {
   pinMode(dirPin2, OUTPUT);
   pinMode(botaoMotor1, INPUT_PULLUP);
   pinMode(botaoMotor2, INPUT_PULLUP);
-  pinMode(pinNewBall, INPUT_PULLUP); 
   pinMode(pinBallOut, INPUT_PULLUP);
+
+  pinMode(pinNewBall, INPUT_PULLUP);
+  filaNewBall = xQueueCreate(5, sizeof(uint8_t));
+  if (filaNewBall == NULL)
+  {
+    Serial.println("Erro ao criar fila de nova bola!");
+    while (1)
+      ; // trava o sistema se a fila não for criada
+  }
+
+  attachInterrupt(digitalPinToInterrupt(pinNewBall), isrNewBall, FALLING);
+  xTaskCreatePinnedToCore(TaskNewBall, "TaskNewBall", 2048, NULL, configMAX_PRIORITIES - 1, NULL, 1);
+
   iniciarPWMAvoidEnable();
 
   xTaskCreatePinnedToCore(TaskJoystickScore, "JoystickScore", 4096, NULL, 1, NULL, 0);
@@ -274,6 +352,7 @@ void setup() {
   xTaskCreatePinnedToCore(TaskInicializarFliper, "InitFlipers", 2048, NULL, 1, NULL, 1);
 }
 
-void loop() {
+void loop()
+{
   vTaskDelay(pdMS_TO_TICKS(1000));
 }
